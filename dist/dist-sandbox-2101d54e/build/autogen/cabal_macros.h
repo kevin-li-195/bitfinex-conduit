@@ -14,6 +14,13 @@
   (major1) == 4 && (major2) <  8 || \
   (major1) == 4 && (major2) == 8 && (minor) <= 2)
 
+/* package bytestring-0.10.6.0 */
+#define VERSION_bytestring "0.10.6.0"
+#define MIN_VERSION_bytestring(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  10 || \
+  (major1) == 0 && (major2) == 10 && (minor) <= 6)
+
 /* package data-default-0.5.3 */
 #define VERSION_data_default "0.5.3"
 #define MIN_VERSION_data_default(major1,major2,minor) (\
@@ -28,12 +35,26 @@
   (major1) == 2 && (major2) <  1 || \
   (major1) == 2 && (major2) == 1 && (minor) <= 8)
 
+/* package scientific-0.3.4.2 */
+#define VERSION_scientific "0.3.4.2"
+#define MIN_VERSION_scientific(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  3 || \
+  (major1) == 0 && (major2) == 3 && (minor) <= 4)
+
 /* package text-1.2.1.3 */
 #define VERSION_text "1.2.1.3"
 #define MIN_VERSION_text(major1,major2,minor) (\
   (major1) <  1 || \
   (major1) == 1 && (major2) <  2 || \
   (major1) == 1 && (major2) == 2 && (minor) <= 1)
+
+/* package time-1.5.0.1 */
+#define VERSION_time "1.5.0.1"
+#define MIN_VERSION_time(major1,major2,minor) (\
+  (major1) <  1 || \
+  (major1) == 1 && (major2) <  5 || \
+  (major1) == 1 && (major2) == 5 && (minor) <= 0)
 
 /* tool alex-3.1.3 */
 #define TOOL_VERSION_alex "3.1.3"
@@ -105,5 +126,5 @@
   (major1) == 2 && (major2) <  25 || \
   (major1) == 2 && (major2) == 25 && (minor) <= 0)
 
-#define CURRENT_PACKAGE_KEY "bitfi_9H5JkVRXGy314JExtk7MX4"
+#define CURRENT_PACKAGE_KEY "bitfi_FkpwbSaA4ST2Gk7ttXAwAC"
 

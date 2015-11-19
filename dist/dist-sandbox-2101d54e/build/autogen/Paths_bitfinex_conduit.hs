@@ -17,7 +17,7 @@ version = Version [0,1] []
 bindir, libdir, datadir, libexecdir, sysconfdir :: FilePath
 
 bindir     = "/home/kevin/projects/jafar/.cabal-sandbox/bin"
-libdir     = "/home/kevin/projects/jafar/.cabal-sandbox/lib/i386-linux-ghc-7.10.2.20151105/bitfinex-conduit-0.1-9H5JkVRXGy314JExtk7MX4"
+libdir     = "/home/kevin/projects/jafar/.cabal-sandbox/lib/i386-linux-ghc-7.10.2.20151105/bitfinex-conduit-0.1"
 datadir    = "/home/kevin/projects/jafar/.cabal-sandbox/share/i386-linux-ghc-7.10.2.20151105/bitfinex-conduit-0.1"
 libexecdir = "/home/kevin/projects/jafar/.cabal-sandbox/libexec"
 sysconfdir = "/home/kevin/projects/jafar/.cabal-sandbox/etc"
