@@ -83,3 +83,12 @@ getOrderBook c = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
+getTrades :: Ticker -> IO (Either String [Trade])
+getTrades t = do
+    request <- parseUrl $ "https://api.bitfinex.com/v1/trades/" ++ unTicker t
+    m <- makeManager
+    a <- httpLbs request m
+    let b = decodeBody a
+    case b of
+        Nothing -> return $ Left "Error: No response body or bad parse."
+        Just x -> return $ Right x
