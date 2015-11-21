@@ -21,7 +21,7 @@ makeManager = newManager tlsManagerSettings
 decodeBody :: FromJSON b => Response L.ByteString -> Maybe b
 decodeBody = decode . responseBody
 
--- | Gets a list of available "Symbols" with their associated details.
+-- | Gets a list of available "Symbol"s with their associated details.
 getSymbolsDetails :: IO (Either String [Symbol])
 getSymbolsDetails = do
     request <- parseUrl "https://api.bitfinex.com/v1/symbols_details"
@@ -32,7 +32,7 @@ getSymbolsDetails = do
         Nothing -> return $ Left "Error: No response body."
         Just x -> return $ Right x
 
--- | Gets a list of available "Pairs".
+-- | Gets a list of available "Ticker"s.
 getSymbols :: IO (Either String [Ticker])
 getSymbols = do
     request <- parseUrl "https://api.bitfinex.com/v1/symbols"
@@ -43,6 +43,7 @@ getSymbols = do
         Nothing -> return $ Left "Error: No response body."
         Just x -> return $ Right x
 
+-- | Get the most recent "TickerData" for a "Ticker". Contains lots of price data.
 getTicker :: Ticker -> IO (Either String TickerData)
 getTicker t = do
     request <- parseUrl $ "https://api.bitfinex.com/v1/pubticker/" ++ unTicker t
@@ -53,6 +54,7 @@ getTicker t = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
+-- | Get a list of the most recent "Stats" of a "Ticker". Contains volume and period.
 getStats :: Ticker -> IO (Either String [Stats])
 getStats t = do
     request <- parseUrl $ "https://api.bitfinex.com/v1/stats/" ++ unTicker t
@@ -63,6 +65,7 @@ getStats t = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
+-- | Get the most recent "FundingBook" of a "Currency".
 getFundingBook :: Currency -> IO (Either String FundingBook)
 getFundingBook c = do
     request <- parseUrl $ "https://api.bitfinex.com/v1/lendbook/" ++ unCurr c
@@ -73,6 +76,7 @@ getFundingBook c = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
+-- | Get the most recent "OrderBook" of a "Ticker"
 getOrderBook :: Ticker -> IO (Either String OrderBook)
 getOrderBook c = do
     request <- parseUrl $ "https://api.bitfinex.com/v1/book/" ++ unTicker c
@@ -83,6 +87,7 @@ getOrderBook c = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
+-- | Get list of all recent "Trade"s of a "Ticker". Returns an error string if fails.
 getTrades :: Ticker -> IO (Either String [Trade])
 getTrades t = do
     request <- parseUrl $ "https://api.bitfinex.com/v1/trades/" ++ unTicker t
