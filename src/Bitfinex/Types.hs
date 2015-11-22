@@ -109,12 +109,20 @@ data OrderAsk = OrderAsk
     deriving Show
 
 data Trade = Trade
-    { getTradeTimestamp :: Double
+    { getTradeTimestamp :: BTCTime
     , getTradeID :: Int
     , getTradePrice :: Price
     , getTradeAmount :: Price
     , getTradeExchange :: String
     , getTradeType :: TradeType
+    }
+    deriving Show
+
+data Loan = Loan
+    { getLoanRate :: Double
+    , getLoanAmount :: Price
+    , getLoanAmountUsed :: Price
+    , getLoanTimestamp :: BTCTime
     }
     deriving Show
 
@@ -124,6 +132,13 @@ data Trade = Trade
 -- TODO: Fix dangerous read. Change to reads.
 
 -- TODO: Make BTCTime better
+instance FromJSON Loan where
+    parseJSON (Object o) = Loan
+                    <$> (fmap read $ o .: "rate")
+                    <*> o .: "amount_lent"
+                    <*> o .: "amount_used"
+                    <*> o .: "timestamp"
+
 instance FromJSON Trade where
     parseJSON (Object o) = Trade
                     <$> o .: "timestamp"

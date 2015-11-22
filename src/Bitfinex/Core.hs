@@ -97,3 +97,14 @@ getTrades t = do
     case b of
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
+
+-- | Get list of all recent "Loan"s: total amount lent and FRR in % by 365 days.
+getLoans :: Currency -> IO (Either String [Loan])
+getLoans c = do
+    request <- parseUrl $ "https://api.bitfinex.com/v1/lends/" ++ unCurr c
+    m <- makeManager
+    a <- httpLbs request m
+    let b = decodeBody a
+    case b of
+        Nothing -> return $ Left "Error: No response body or bad parse."
+        Just x -> return $ Right x
