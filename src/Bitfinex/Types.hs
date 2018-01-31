@@ -57,6 +57,9 @@ data TickerData = TickerData
 newtype BTCTime = BTCTime { unBTCTime :: Sci.Scientific }
     deriving Show
 
+newtype DayPeriod = DayPeriod { unDayPeriod :: Int }
+    deriving Show
+
 data FundingBook = FundingBook
     { getFundingBids :: [FundingBid]
     , getFundingAsks :: [FundingAsk]
@@ -85,7 +88,7 @@ newtype Ticker = Ticker { unTicker :: String }
     deriving Show
 
 data Stats = Stats
-    { getStatsPeriod :: Int
+    { getStatsPeriod :: NominalDiffTime
     , getStatsVolume :: Price
     }
     deriving Show
@@ -96,7 +99,7 @@ data FRR = YesFRR | NoFRR
 data FundingBid = FundingBid
     { getFundingBidRate :: Price
     , getFundingBidAmount :: Price
-    , getFundingBidPeriod :: Int
+    , getFundingBidPeriod :: NominalDiffTime
     , getFundingBidTimestamp :: UTCTime
     , getFundingBidFrr :: FRR
     }
@@ -105,7 +108,7 @@ data FundingBid = FundingBid
 data FundingAsk = FundingAsk
     { getFundingAskRate :: Price
     , getFundingAskAmount :: Price
-    , getFundingAskPeriod :: Int
+    , getFundingAskPeriod :: NominalDiffTime
     , getFundingAskTimestamp :: UTCTime
     , getFundingAskFrr :: FRR
     }
@@ -193,7 +196,7 @@ instance FromJSON FundingBid where
     parseJSON (Object o) = FundingBid
                     <$> o .: "rate"
                     <*> o .: "amount"
-                    <*> o .: "period"
+                    <*> dayPeriod o
                     <*> timestamp o
                     <*> o .: "frr"
     parseJSON _          = empty
@@ -202,7 +205,7 @@ instance FromJSON FundingAsk where
     parseJSON (Object o) = FundingAsk
                     <$> o .: "rate"
                     <*> o .: "amount"
-                    <*> o .: "period"
+                    <*> dayPeriod o
                     <*> timestamp o
                     <*> o .: "frr"
     parseJSON _          = empty
@@ -238,6 +241,9 @@ instance FromJSON BTCTime where
     parseJSON (Number n) = BTCTime <$> pure (realToFrac n)
     parseJSON _ = empty
 
+instance FromJSON DayPeriod where
+    parseJSON (Number n) = pure $ DayPeriod $ round n
+
 instance FromJSON Price where
     parseJSON (String s) = Price <$> pure ((read . unpack) s)
     parseJSON _ = empty
@@ -248,7 +254,7 @@ instance FromJSON Ticker where
 
 instance FromJSON Stats where
     parseJSON (Object o) = Stats
-                           <$> o .: "period"
+                           <$> dayPeriod o
                            <*> o .: "volume"
     parseJSON _ = empty
 
@@ -294,9 +300,17 @@ instance FromJSON Symbol where
 timestamp :: Object -> Parser UTCTime
 timestamp o = fmap fromBitfinexTime (o .: "timestamp")
 
+dayPeriod :: Object -> Parser NominalDiffTime
+dayPeriod o = fmap fromDayPeriod (o .: "period")
+
 --------------------------
 -- converters
 
 -- | Docs say timestamp is measured in in milliseconds but it turns out that it's in seconds.
 fromBitfinexTime :: BTCTime -> UTCTime
 fromBitfinexTime = posixSecondsToUTCTime . realToFrac . unBTCTime
+
+fromDayPeriod :: DayPeriod -> NominalDiffTime
+fromDayPeriod = fromInteger . (* secondsInDay) . fromIntegral . unDayPeriod
+    where secondsInDay = 86400
+
