@@ -1,13 +1,33 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bitfinex.Types where
+module Bitfinex.Types(
+      Symbol(..)
+    , TickerData(..)
+    , FundingBook(..)
+    , TradeType(..)
+    , Exchange(..)
+    , OrderBook(..)
+    , Price(..)
+    , Currency(..)
+    , Ticker(..)
+    , Stats(..)
+    , FRR(..)
+    , FundingBid(..)
+    , FundingAsk(..)
+    , OrderBid(..)
+    , OrderAsk(..)
+    , Trade(..)
+    , Loan(..)
+) where
 
 import Data.Aeson
+import Data.Aeson.Types
 import Data.Ratio
 import qualified Data.Scientific as Sci
 import Data.Text (unpack)
 import Data.Time.Clock
 import Data.Time.Format
+import Data.Time.Clock.POSIX
 import Control.Monad
 import Control.Applicative
 
@@ -30,14 +50,11 @@ data TickerData = TickerData
     , getTickerLow :: Price
     , getTickerHigh :: Price
     , getTickerVolume :: Price
-    , getTickerTime :: BTCTime
+    , getTickerTime :: UTCTime
     }
     deriving Show
 
--- newtype BTCTime = BTCTime { btcTime :: UTCTime }
---     deriving (Eq, Ord, Show)
-
-data BTCTime = BTCTime Double
+newtype BTCTime = BTCTime { unBTCTime :: Sci.Scientific }
     deriving Show
 
 data FundingBook = FundingBook
@@ -61,10 +78,10 @@ data OrderBook = OrderBook
 newtype Price = Price { unPrice :: Sci.Scientific }
     deriving Show
 
-data Currency = Currency { unCurr :: String }
+newtype Currency = Currency { unCurr :: String }
     deriving Show
 
-data Ticker = Ticker { unTicker :: String }
+newtype Ticker = Ticker { unTicker :: String }
     deriving Show
 
 data Stats = Stats
@@ -80,7 +97,7 @@ data FundingBid = FundingBid
     { getFundingBidRate :: Price
     , getFundingBidAmount :: Price
     , getFundingBidPeriod :: Int
-    , getFundingBidTimestamp :: BTCTime
+    , getFundingBidTimestamp :: UTCTime
     , getFundingBidFrr :: FRR
     }
     deriving Show
@@ -89,7 +106,7 @@ data FundingAsk = FundingAsk
     { getFundingAskRate :: Price
     , getFundingAskAmount :: Price
     , getFundingAskPeriod :: Int
-    , getFundingAskTimestamp :: BTCTime
+    , getFundingAskTimestamp :: UTCTime
     , getFundingAskFrr :: FRR
     }
     deriving Show
@@ -97,19 +114,19 @@ data FundingAsk = FundingAsk
 data OrderBid = OrderBid
     { getOrderBidRate :: Price
     , getOrderBidAmount :: Price
-    , getOrderBidTimestamp :: BTCTime
+    , getOrderBidTimestamp :: UTCTime
     }
     deriving Show
 
 data OrderAsk = OrderAsk
     { getOrderAskRate :: Price
     , getOrderAskAmount :: Price
-    , getOrderAskTimestamp :: BTCTime
+    , getOrderAskTimestamp :: UTCTime
     }
     deriving Show
 
 data Trade = Trade
-    { getTradeTimestamp :: BTCTime
+    { getTradeTimestamp :: UTCTime
     , getTradeID :: Int
     , getTradePrice :: Price
     , getTradeAmount :: Price
@@ -122,7 +139,7 @@ data Loan = Loan
     { getLoanRate :: Double
     , getLoanAmount :: Price
     , getLoanAmountUsed :: Price
-    , getLoanTimestamp :: BTCTime
+    , getLoanTimestamp :: UTCTime
     }
     deriving Show
 
@@ -137,11 +154,11 @@ instance FromJSON Loan where
                     <$> (fmap read $ o .: "rate")
                     <*> o .: "amount_lent"
                     <*> o .: "amount_used"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
 
 instance FromJSON Trade where
     parseJSON (Object o) = Trade
-                    <$> o .: "timestamp"
+                    <$> timestamp o
                     <*> o .: "tid"
                     <*> o .: "price"
                     <*> o .: "amount"
@@ -177,7 +194,7 @@ instance FromJSON FundingBid where
                     <$> o .: "rate"
                     <*> o .: "amount"
                     <*> o .: "period"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
                     <*> o .: "frr"
     parseJSON _          = empty
 
@@ -186,7 +203,7 @@ instance FromJSON FundingAsk where
                     <$> o .: "rate"
                     <*> o .: "amount"
                     <*> o .: "period"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
                     <*> o .: "frr"
     parseJSON _          = empty
 
@@ -194,14 +211,14 @@ instance FromJSON OrderBid where
     parseJSON (Object o) = OrderBid
                     <$> o .: "price"
                     <*> o .: "amount"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
     parseJSON _          = empty
 
 instance FromJSON OrderAsk where
     parseJSON (Object o) = OrderAsk
                     <$> o .: "price"
                     <*> o .: "amount"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
     parseJSON _          = empty
 
 instance FromJSON FRR where
@@ -218,7 +235,7 @@ instance FromJSON FRR where
 --     parseJSON _ = empty
 instance FromJSON BTCTime where
     parseJSON (String s) = BTCTime <$> pure ((read . unpack) s)
-    parseJSON (Number n) = BTCTime <$> pure (Sci.toRealFloat n)
+    parseJSON (Number n) = BTCTime <$> pure (realToFrac n)
     parseJSON _ = empty
 
 instance FromJSON Price where
@@ -257,7 +274,7 @@ instance FromJSON TickerData where
                            <*> o .: "low"
                            <*> o .: "high"
                            <*> o .: "volume"
-                           <*> o .: "timestamp"
+                           <*> timestamp o
     parseJSON _ = empty
 
 instance FromJSON Symbol where
@@ -270,3 +287,16 @@ instance FromJSON Symbol where
                            o .: "minimum_order_size" <*>
                            o .: "expiration"
     parseJSON _          = empty
+
+--------------------------
+-- fields
+
+timestamp :: Object -> Parser UTCTime
+timestamp o = fmap fromBitfinexTime (o .: "timestamp")
+
+--------------------------
+-- converters
+
+-- | Docs say timestamp is measured in in milliseconds but it turns out that it's in seconds.
+fromBitfinexTime :: BTCTime -> UTCTime
+fromBitfinexTime = posixSecondsToUTCTime . realToFrac . unBTCTime
