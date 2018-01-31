@@ -22,7 +22,7 @@ decodeBody :: FromJSON b => Response L.ByteString -> Maybe b
 decodeBody = decode . responseBody
 
 -- | Gets a list of available "Symbol"s with their associated details.
-getSymbolsDetails :: IO (Either String [Symbol])
+getSymbolsDetails :: IO (Either String [SymbolDetail])
 getSymbolsDetails = do
     request <- parseRequest "https://api.bitfinex.com/v1/symbols_details"
     m <- makeManager
@@ -32,8 +32,8 @@ getSymbolsDetails = do
         Nothing -> return $ Left "Error: No response body."
         Just x -> return $ Right x
 
--- | Gets a list of available "Ticker"s.
-getSymbols :: IO (Either String [Ticker])
+-- | Gets a list of available "Symbol"s.
+getSymbols :: IO (Either String [Symbol])
 getSymbols = do
     request <- parseRequest "https://api.bitfinex.com/v1/symbols"
     m <- makeManager
@@ -43,10 +43,10 @@ getSymbols = do
         Nothing -> return $ Left "Error: No response body."
         Just x -> return $ Right x
 
--- | Get the most recent "TickerData" for a "Ticker". Contains lots of price data.
-getTicker :: Ticker -> IO (Either String TickerData)
+-- | Get the most recent "Ticker" for a "Symbol". Contains lots of price data.
+getTicker :: Symbol -> IO (Either String Ticker)
 getTicker t = do
-    request <- parseRequest $ "https://api.bitfinex.com/v1/pubticker/" ++ unTicker t
+    request <- parseRequest $ "https://api.bitfinex.com/v1/pubticker/" ++ unSymbol t
     m <- makeManager
     a <- httpLbs request m
     let b = decodeBody a
@@ -55,9 +55,9 @@ getTicker t = do
         Just x -> return $ Right x
 
 -- | Get a list of the most recent "Stats" of a "Ticker". Contains volume and period.
-getStats :: Ticker -> IO (Either String [Stats])
+getStats :: Symbol -> IO (Either String [Stats])
 getStats t = do
-    request <- parseRequest $ "https://api.bitfinex.com/v1/stats/" ++ unTicker t
+    request <- parseRequest $ "https://api.bitfinex.com/v1/stats/" ++ unSymbol t
     m <- makeManager
     a <- httpLbs request m
     let b = decodeBody a
@@ -76,10 +76,10 @@ getFundingBook c = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
--- | Get the most recent "OrderBook" of a "Ticker"
-getOrderBook :: Ticker -> IO (Either String OrderBook)
+-- | Get the most recent "OrderBook" of a "Symbol"
+getOrderBook :: Symbol -> IO (Either String OrderBook)
 getOrderBook c = do
-    request <- parseRequest $ "https://api.bitfinex.com/v1/book/" ++ unTicker c
+    request <- parseRequest $ "https://api.bitfinex.com/v1/book/" ++ unSymbol c
     m <- makeManager
     a <- httpLbs request m
     let b = decodeBody a
@@ -87,10 +87,10 @@ getOrderBook c = do
         Nothing -> return $ Left "Error: No response body or bad parse."
         Just x -> return $ Right x
 
--- | Get list of all recent "Trade"s of a "Ticker". Returns an error string if fails.
-getTrades :: Ticker -> IO (Either String [Trade])
+-- | Get list of all recent "Trade"s of a "Symbol". Returns an error string if fails.
+getTrades :: Symbol -> IO (Either String [Trade])
 getTrades t = do
-    request <- parseRequest $ "https://api.bitfinex.com/v1/trades/" ++ unTicker t
+    request <- parseRequest $ "https://api.bitfinex.com/v1/trades/" ++ unSymbol t
     m <- makeManager
     a <- httpLbs request m
     let b = decodeBody a

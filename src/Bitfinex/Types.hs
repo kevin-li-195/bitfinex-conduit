@@ -10,11 +10,11 @@ module Bitfinex.Types(
     , Currency(..)
     , DayPeriod
     , fromDayPeriod
-    , Ticker(..)
+    , Symbol(..)
 
     -- * Compound types
-    , Symbol(..)
-    , TickerData(..)
+    , SymbolDetail(..)
+    , Ticker(..)
     , FundingBook(..)
     , TradeType(..)
     , Exchange(..)
@@ -42,8 +42,8 @@ import Control.Monad
 import Control.Applicative
 import GHC.Generics
 
-data Symbol = Symbol
-    { getSymbolPair :: Ticker
+data SymbolDetail = SymbolDetail
+    { getSymbolPair :: Symbol
     , getSymbolPrecision :: Int
     , getSymbolInitialMargin :: Price
     , getSymbolMinimumMargin :: Price
@@ -53,7 +53,7 @@ data Symbol = Symbol
     }
     deriving (Show, Eq, Ord, Data, Generic)
 
-data TickerData = TickerData
+data Ticker = Ticker
     { getTickerMid :: Price
     , getTickerBid :: Price
     , getTickerAsk :: Price
@@ -95,7 +95,7 @@ newtype Price = Price { unPrice :: Sci.Scientific }
 newtype Currency = Currency { unCurr :: String }
     deriving (Show, Eq, Ord, Data, Generic)
 
-newtype Ticker = Ticker { unTicker :: String }
+newtype Symbol = Symbol { unSymbol :: String }
     deriving (Show, Eq, Ord, Data, Generic)
 
 data Stats = Stats
@@ -259,8 +259,8 @@ instance FromJSON Price where
     parseJSON (String s) = Price <$> pure ((read . unpack) s)
     parseJSON _ = empty
 
-instance FromJSON Ticker where
-    parseJSON (String s) = Ticker <$> pure (unpack s)
+instance FromJSON Symbol where
+    parseJSON (String s) = Symbol <$> pure (unpack s)
     parseJSON _ = empty
 
 instance FromJSON Stats where
@@ -282,8 +282,8 @@ instance FromJSON Stats where
 --                     show $ Sci.toRealFloat d
 --     parseJSON _ = mzero
 
-instance FromJSON TickerData where
-    parseJSON (Object o) = TickerData
+instance FromJSON Ticker where
+    parseJSON (Object o) = Ticker
                            <$> o .: "mid"
                            <*> o .: "bid"
                            <*> o .: "ask"
@@ -294,8 +294,8 @@ instance FromJSON TickerData where
                            <*> timestamp o
     parseJSON _ = empty
 
-instance FromJSON Symbol where
-    parseJSON (Object o) = Symbol <$>
+instance FromJSON SymbolDetail where
+    parseJSON (Object o) = SymbolDetail <$>
                            o .: "pair" <*>
                            o .: "price_precision" <*>
                            o .: "initial_margin" <*>
