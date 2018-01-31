@@ -1,15 +1,24 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE
+        OverloadedStrings,
+        GeneralizedNewtypeDeriving,
+        DeriveDataTypeable,
+        DeriveGeneric #-}
 
 module Bitfinex.Types(
-      Symbol(..)
+    -- * Units
+      Price(..)
+    , Currency(..)
+    , DayPeriod
+    , fromDayPeriod
+    , Ticker(..)
+
+    -- * Compound types
+    , Symbol(..)
     , TickerData(..)
     , FundingBook(..)
     , TradeType(..)
     , Exchange(..)
     , OrderBook(..)
-    , Price(..)
-    , Currency(..)
-    , Ticker(..)
     , Stats(..)
     , FRR(..)
     , FundingBid(..)
@@ -20,6 +29,7 @@ module Bitfinex.Types(
     , Loan(..)
 ) where
 
+import Data.Data
 import Data.Aeson
 import Data.Aeson.Types
 import Data.Ratio
@@ -30,6 +40,7 @@ import Data.Time.Format
 import Data.Time.Clock.POSIX
 import Control.Monad
 import Control.Applicative
+import GHC.Generics
 
 data Symbol = Symbol
     { getSymbolPair :: Ticker
@@ -40,7 +51,7 @@ data Symbol = Symbol
     , getSymbolMinOrderSize :: Price
     , getSymbolExpiration :: String
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data TickerData = TickerData
     { getTickerMid :: Price
@@ -52,81 +63,81 @@ data TickerData = TickerData
     , getTickerVolume :: Price
     , getTickerTime :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 newtype BTCTime = BTCTime { unBTCTime :: Sci.Scientific }
     deriving Show
 
 newtype DayPeriod = DayPeriod { unDayPeriod :: Int }
-    deriving Show
+    deriving (Show, Eq, Num, Ord, Enum, Data, Generic)
 
 data FundingBook = FundingBook
     { getFundingBids :: [FundingBid]
     , getFundingAsks :: [FundingAsk]
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data TradeType = Buy | Sell
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 newtype Exchange = Exchange { unExchange :: String }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data OrderBook = OrderBook
     { getOrderBids :: [OrderBid]
     , getOrderAsks :: [OrderAsk]
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 newtype Price = Price { unPrice :: Sci.Scientific }
-    deriving Show
+    deriving (Show, Eq, Num, Ord, Data, Generic)
 
 newtype Currency = Currency { unCurr :: String }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 newtype Ticker = Ticker { unTicker :: String }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Stats = Stats
-    { getStatsPeriod :: NominalDiffTime
+    { getStatsPeriod :: DayPeriod
     , getStatsVolume :: Price
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data FRR = YesFRR | NoFRR
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data FundingBid = FundingBid
     { getFundingBidRate :: Price
     , getFundingBidAmount :: Price
-    , getFundingBidPeriod :: NominalDiffTime
+    , getFundingBidPeriod :: DayPeriod
     , getFundingBidTimestamp :: UTCTime
     , getFundingBidFrr :: FRR
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data FundingAsk = FundingAsk
     { getFundingAskRate :: Price
     , getFundingAskAmount :: Price
-    , getFundingAskPeriod :: NominalDiffTime
+    , getFundingAskPeriod :: DayPeriod
     , getFundingAskTimestamp :: UTCTime
     , getFundingAskFrr :: FRR
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data OrderBid = OrderBid
     { getOrderBidRate :: Price
     , getOrderBidAmount :: Price
     , getOrderBidTimestamp :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data OrderAsk = OrderAsk
     { getOrderAskRate :: Price
     , getOrderAskAmount :: Price
     , getOrderAskTimestamp :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Trade = Trade
     { getTradeTimestamp :: UTCTime
@@ -136,7 +147,7 @@ data Trade = Trade
     , getTradeExchange :: String
     , getTradeType :: TradeType
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Loan = Loan
     { getLoanRate :: Double
@@ -144,7 +155,7 @@ data Loan = Loan
     , getLoanAmountUsed :: Price
     , getLoanTimestamp :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 -- TODO: Combine FromJSON instances of OrderBook and FundingBook along with
 -- data constructors of OrderAsk, OrderBid, FundingAsk, FundingBid
@@ -300,8 +311,8 @@ instance FromJSON Symbol where
 timestamp :: Object -> Parser UTCTime
 timestamp o = fmap fromBitfinexTime (o .: "timestamp")
 
-dayPeriod :: Object -> Parser NominalDiffTime
-dayPeriod o = fmap fromDayPeriod (o .: "period")
+dayPeriod :: Object -> Parser DayPeriod
+dayPeriod o = o .: "period"
 
 --------------------------
 -- converters
@@ -310,6 +321,7 @@ dayPeriod o = fmap fromDayPeriod (o .: "period")
 fromBitfinexTime :: BTCTime -> UTCTime
 fromBitfinexTime = posixSecondsToUTCTime . realToFrac . unBTCTime
 
+-- | Converts periods in days to periods in seconds.
 fromDayPeriod :: DayPeriod -> NominalDiffTime
 fromDayPeriod = fromInteger . (* secondsInDay) . fromIntegral . unDayPeriod
     where secondsInDay = 86400
