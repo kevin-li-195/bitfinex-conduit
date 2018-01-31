@@ -58,7 +58,7 @@ data OrderBook = OrderBook
     }
     deriving Show
 
-newtype Price = Price { unPrice :: Double }
+newtype Price = Price { unPrice :: Sci.Scientific }
     deriving Show
 
 data Currency = Currency { unCurr :: String }
@@ -159,7 +159,7 @@ instance FromJSON TradeType where
                     "sell" -> pure Sell
                     _ -> error "Error: Parse failed on TradeType."
     parseJSON _          = empty
-    
+
 instance FromJSON OrderBook where
     parseJSON (Object o) = OrderBook
                     <$> o .: "bids"
@@ -242,7 +242,7 @@ instance FromJSON Stats where
 --                         case num of
 --                             Nothing -> pure 0
 --                             Just x -> pure x
--- 
+--
 -- instance FromJSON UTCTime where
 --     parseJSON (Number d) = UTCTime <$> parseTimeM True defaultTimeLocale "%s" $
 --                     show $ Sci.toRealFloat d
