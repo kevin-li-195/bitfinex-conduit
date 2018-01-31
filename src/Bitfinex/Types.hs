@@ -1,18 +1,49 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE
+        OverloadedStrings,
+        GeneralizedNewtypeDeriving,
+        DeriveDataTypeable,
+        DeriveGeneric #-}
 
-module Bitfinex.Types where
+module Bitfinex.Types(
+    -- * Units
+      Price(..)
+    , Currency(..)
+    , DayPeriod
+    , fromDayPeriod
+    , Symbol(..)
 
+    -- * Compound types
+    , SymbolDetail(..)
+    , Ticker(..)
+    , FundingBook(..)
+    , TradeType(..)
+    , Exchange(..)
+    , OrderBook(..)
+    , Stats(..)
+    , FRR(..)
+    , FundingBid(..)
+    , FundingAsk(..)
+    , OrderBid(..)
+    , OrderAsk(..)
+    , Trade(..)
+    , Loan(..)
+) where
+
+import Data.Data
 import Data.Aeson
+import Data.Aeson.Types
 import Data.Ratio
 import qualified Data.Scientific as Sci
 import Data.Text (unpack)
 import Data.Time.Clock
 import Data.Time.Format
+import Data.Time.Clock.POSIX
 import Control.Monad
 import Control.Applicative
+import GHC.Generics
 
-data Symbol = Symbol
-    { getSymbolPair :: Ticker
+data SymbolDetail = SymbolDetail
+    { getSymbolPair :: Symbol
     , getSymbolPrecision :: Int
     , getSymbolInitialMargin :: Price
     , getSymbolMinimumMargin :: Price
@@ -20,9 +51,9 @@ data Symbol = Symbol
     , getSymbolMinOrderSize :: Price
     , getSymbolExpiration :: String
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
-data TickerData = TickerData
+data Ticker = Ticker
     { getTickerMid :: Price
     , getTickerBid :: Price
     , getTickerAsk :: Price
@@ -30,101 +61,101 @@ data TickerData = TickerData
     , getTickerLow :: Price
     , getTickerHigh :: Price
     , getTickerVolume :: Price
-    , getTickerTime :: BTCTime
+    , getTickerTime :: UTCTime
     }
+    deriving (Show, Eq, Ord, Data, Generic)
+
+newtype BTCTime = BTCTime { unBTCTime :: Sci.Scientific }
     deriving Show
 
--- newtype BTCTime = BTCTime { btcTime :: UTCTime }
---     deriving (Eq, Ord, Show)
-
-data BTCTime = BTCTime Double
-    deriving Show
+newtype DayPeriod = DayPeriod { unDayPeriod :: Int }
+    deriving (Show, Eq, Num, Ord, Enum, Data, Generic)
 
 data FundingBook = FundingBook
     { getFundingBids :: [FundingBid]
     , getFundingAsks :: [FundingAsk]
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data TradeType = Buy | Sell
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 newtype Exchange = Exchange { unExchange :: String }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data OrderBook = OrderBook
     { getOrderBids :: [OrderBid]
     , getOrderAsks :: [OrderAsk]
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
-newtype Price = Price { unPrice :: Double }
-    deriving Show
+newtype Price = Price { unPrice :: Sci.Scientific }
+    deriving (Show, Eq, Num, Ord, Data, Generic)
 
-data Currency = Currency { unCurr :: String }
-    deriving Show
+newtype Currency = Currency { unCurr :: String }
+    deriving (Show, Eq, Ord, Data, Generic)
 
-data Ticker = Ticker { unTicker :: String }
-    deriving Show
+newtype Symbol = Symbol { unSymbol :: String }
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Stats = Stats
-    { getStatsPeriod :: Int
+    { getStatsPeriod :: DayPeriod
     , getStatsVolume :: Price
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data FRR = YesFRR | NoFRR
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data FundingBid = FundingBid
     { getFundingBidRate :: Price
     , getFundingBidAmount :: Price
-    , getFundingBidPeriod :: Int
-    , getFundingBidTimestamp :: BTCTime
+    , getFundingBidPeriod :: DayPeriod
+    , getFundingBidTimestamp :: UTCTime
     , getFundingBidFrr :: FRR
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data FundingAsk = FundingAsk
     { getFundingAskRate :: Price
     , getFundingAskAmount :: Price
-    , getFundingAskPeriod :: Int
-    , getFundingAskTimestamp :: BTCTime
+    , getFundingAskPeriod :: DayPeriod
+    , getFundingAskTimestamp :: UTCTime
     , getFundingAskFrr :: FRR
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data OrderBid = OrderBid
     { getOrderBidRate :: Price
     , getOrderBidAmount :: Price
-    , getOrderBidTimestamp :: BTCTime
+    , getOrderBidTimestamp :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data OrderAsk = OrderAsk
     { getOrderAskRate :: Price
     , getOrderAskAmount :: Price
-    , getOrderAskTimestamp :: BTCTime
+    , getOrderAskTimestamp :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Trade = Trade
-    { getTradeTimestamp :: BTCTime
+    { getTradeTimestamp :: UTCTime
     , getTradeID :: Int
     , getTradePrice :: Price
     , getTradeAmount :: Price
     , getTradeExchange :: String
     , getTradeType :: TradeType
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 data Loan = Loan
     { getLoanRate :: Double
     , getLoanAmount :: Price
     , getLoanAmountUsed :: Price
-    , getLoanTimestamp :: BTCTime
+    , getLoanTimestamp :: UTCTime
     }
-    deriving Show
+    deriving (Show, Eq, Ord, Data, Generic)
 
 -- TODO: Combine FromJSON instances of OrderBook and FundingBook along with
 -- data constructors of OrderAsk, OrderBid, FundingAsk, FundingBid
@@ -137,11 +168,11 @@ instance FromJSON Loan where
                     <$> (fmap read $ o .: "rate")
                     <*> o .: "amount_lent"
                     <*> o .: "amount_used"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
 
 instance FromJSON Trade where
     parseJSON (Object o) = Trade
-                    <$> o .: "timestamp"
+                    <$> timestamp o
                     <*> o .: "tid"
                     <*> o .: "price"
                     <*> o .: "amount"
@@ -159,7 +190,7 @@ instance FromJSON TradeType where
                     "sell" -> pure Sell
                     _ -> error "Error: Parse failed on TradeType."
     parseJSON _          = empty
-    
+
 instance FromJSON OrderBook where
     parseJSON (Object o) = OrderBook
                     <$> o .: "bids"
@@ -176,8 +207,8 @@ instance FromJSON FundingBid where
     parseJSON (Object o) = FundingBid
                     <$> o .: "rate"
                     <*> o .: "amount"
-                    <*> o .: "period"
-                    <*> o .: "timestamp"
+                    <*> dayPeriod o
+                    <*> timestamp o
                     <*> o .: "frr"
     parseJSON _          = empty
 
@@ -185,8 +216,8 @@ instance FromJSON FundingAsk where
     parseJSON (Object o) = FundingAsk
                     <$> o .: "rate"
                     <*> o .: "amount"
-                    <*> o .: "period"
-                    <*> o .: "timestamp"
+                    <*> dayPeriod o
+                    <*> timestamp o
                     <*> o .: "frr"
     parseJSON _          = empty
 
@@ -194,14 +225,14 @@ instance FromJSON OrderBid where
     parseJSON (Object o) = OrderBid
                     <$> o .: "price"
                     <*> o .: "amount"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
     parseJSON _          = empty
 
 instance FromJSON OrderAsk where
     parseJSON (Object o) = OrderAsk
                     <$> o .: "price"
                     <*> o .: "amount"
-                    <*> o .: "timestamp"
+                    <*> timestamp o
     parseJSON _          = empty
 
 instance FromJSON FRR where
@@ -218,20 +249,23 @@ instance FromJSON FRR where
 --     parseJSON _ = empty
 instance FromJSON BTCTime where
     parseJSON (String s) = BTCTime <$> pure ((read . unpack) s)
-    parseJSON (Number n) = BTCTime <$> pure (Sci.toRealFloat n)
+    parseJSON (Number n) = BTCTime <$> pure (realToFrac n)
     parseJSON _ = empty
+
+instance FromJSON DayPeriod where
+    parseJSON (Number n) = pure $ DayPeriod $ round n
 
 instance FromJSON Price where
     parseJSON (String s) = Price <$> pure ((read . unpack) s)
     parseJSON _ = empty
 
-instance FromJSON Ticker where
-    parseJSON (String s) = Ticker <$> pure (unpack s)
+instance FromJSON Symbol where
+    parseJSON (String s) = Symbol <$> pure (unpack s)
     parseJSON _ = empty
 
 instance FromJSON Stats where
     parseJSON (Object o) = Stats
-                           <$> o .: "period"
+                           <$> dayPeriod o
                            <*> o .: "volume"
     parseJSON _ = empty
 
@@ -242,14 +276,14 @@ instance FromJSON Stats where
 --                         case num of
 --                             Nothing -> pure 0
 --                             Just x -> pure x
--- 
+--
 -- instance FromJSON UTCTime where
 --     parseJSON (Number d) = UTCTime <$> parseTimeM True defaultTimeLocale "%s" $
 --                     show $ Sci.toRealFloat d
 --     parseJSON _ = mzero
 
-instance FromJSON TickerData where
-    parseJSON (Object o) = TickerData
+instance FromJSON Ticker where
+    parseJSON (Object o) = Ticker
                            <$> o .: "mid"
                            <*> o .: "bid"
                            <*> o .: "ask"
@@ -257,11 +291,11 @@ instance FromJSON TickerData where
                            <*> o .: "low"
                            <*> o .: "high"
                            <*> o .: "volume"
-                           <*> o .: "timestamp"
+                           <*> timestamp o
     parseJSON _ = empty
 
-instance FromJSON Symbol where
-    parseJSON (Object o) = Symbol <$>
+instance FromJSON SymbolDetail where
+    parseJSON (Object o) = SymbolDetail <$>
                            o .: "pair" <*>
                            o .: "price_precision" <*>
                            o .: "initial_margin" <*>
@@ -270,3 +304,25 @@ instance FromJSON Symbol where
                            o .: "minimum_order_size" <*>
                            o .: "expiration"
     parseJSON _          = empty
+
+--------------------------
+-- fields
+
+timestamp :: Object -> Parser UTCTime
+timestamp o = fmap fromBitfinexTime (o .: "timestamp")
+
+dayPeriod :: Object -> Parser DayPeriod
+dayPeriod o = o .: "period"
+
+--------------------------
+-- converters
+
+-- | Docs say timestamp is measured in in milliseconds but it turns out that it's in seconds.
+fromBitfinexTime :: BTCTime -> UTCTime
+fromBitfinexTime = posixSecondsToUTCTime . realToFrac . unBTCTime
+
+-- | Converts periods in days to periods in seconds.
+fromDayPeriod :: DayPeriod -> NominalDiffTime
+fromDayPeriod = fromInteger . (* secondsInDay) . fromIntegral . unDayPeriod
+    where secondsInDay = 86400
+
